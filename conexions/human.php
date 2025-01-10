@@ -1,5 +1,5 @@
 <?php
-// Human.php
+
 class Human {
     protected $id;
     protected $name;

@@ -3,7 +3,7 @@ class Database {
     private $host = '127.0.0.1';
     private $user = 'root';
     private $pass = 'password';
-    private $database = 'blogs';
+    private $database = 'OOP';
     private $conn;
 
     public function __construct() {

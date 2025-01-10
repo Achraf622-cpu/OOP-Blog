@@ -2,37 +2,34 @@
 require '../conexions/connect.php';
 session_start();
 
+$database = new Database();
+$conn = $database->getConnection();
+
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../conexions/login.php");
     exit;
 }
 
-
 if (isset($_GET['make_admin'])) {
     $user_id_to_promote = intval($_GET['make_admin']);
     $stmt = $conn->prepare("UPDATE users SET id_role = (SELECT id FROM roles WHERE name = 'admin') WHERE id = ?");
-    $stmt->bind_param("i", $user_id_to_promote);
-    $stmt->execute();
+    $stmt->execute([$user_id_to_promote]);
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
-
 
 if (isset($_GET['make_user'])) {
     $user_id_to_demote = intval($_GET['make_user']);
     $stmt = $conn->prepare("UPDATE users SET id_role = (SELECT id FROM roles WHERE name = 'user') WHERE id = ?");
-    $stmt->bind_param("i", $user_id_to_demote);
-    $stmt->execute();
+    $stmt->execute([$user_id_to_demote]);
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
 
-
 if (isset($_GET['ban_user'])) {
     $user_id_to_ban = intval($_GET['ban_user']);
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->bind_param("i", $user_id_to_ban);
-    $stmt->execute();
+    $stmt->execute([$user_id_to_ban]);
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
@@ -77,10 +74,10 @@ if (isset($_GET['ban_user'])) {
                                     FROM users u 
                                     JOIN roles r ON u.id_role = r.id");
             $stmt->execute();
-            $result = $stmt->get_result();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
+            if ($result) {
+                foreach ($result as $row) {
                     ?>
                     <div class="relative bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h3 class="text-2xl font-bold text-blue-400 mb-2"><?php echo htmlspecialchars($row['username']); ?></h3>
@@ -118,4 +115,3 @@ if (isset($_GET['ban_user'])) {
 
 </body>
 </html>
-

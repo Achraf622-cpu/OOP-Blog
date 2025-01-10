@@ -1,7 +1,7 @@
 <?php
-require 'connect.php'; // Using your PDO-based Database class
-require 'Human.php'; // Base class for Human
-require 'User.php';  // User-specific class
+require 'connect.php'; 
+require 'Human.php';
+require 'User.php';  
 session_start();
 
 class Register {

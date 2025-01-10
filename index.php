@@ -9,8 +9,7 @@ $query = "SELECT a.id, a.titre, a.para, a.img, a.date, u.username AS author
           ORDER BY a.date DESC";
 $stmt = $conn->prepare($query);
 $stmt->execute();
-$blogs = $stmt->get_result();
-
+$blogs = $stmt->fetchAll(PDO::FETCH_ASSOC); // Get results as an associative array
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['comment_text'])) {
     $blog_id = intval($_POST['blog_id']);
@@ -18,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['co
     $user_id = $_SESSION['user_id'] ?? null;
 
     if ($user_id && !empty($comment_text)) {
+        // Use PDO to insert the comment
         $stmt = $conn->prepare("INSERT INTO coment (text, id_user, id_article) VALUES (?, ?, ?)");
-        $stmt->bind_param("sii", $comment_text, $user_id, $blog_id);
-        $stmt->execute();
+        $stmt->execute([$comment_text, $user_id, $blog_id]);
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
@@ -37,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['co
 </head>
 <body class="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
 
-
 <nav class="bg-gray-800 p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
         <a href="index.php" class="text-2xl font-bold text-blue-400">My Blog</a>
@@ -51,23 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['co
 </nav>
 
 <div class="min-h-screen p-8">
-
     <h1 class="text-5xl font-extrabold text-blue-400 mb-10 text-center">Blogs</h1>
-
 
     <div class="grid grid-cols-3 gap-6">
         <?php
-        if ($blogs->num_rows > 0) {
-            while ($blog = $blogs->fetch_assoc()) {
+        if (!empty($blogs)) {
+            foreach ($blogs as $blog) {
 
+                // Use PDO to fetch comments for each blog
                 $stmt = $conn->prepare("SELECT c.text, c.date, u.username 
                                         FROM coment c 
                                         JOIN users u ON c.id_user = u.id 
                                         WHERE c.id_article = ? 
                                         ORDER BY c.date DESC LIMIT 3");
-                $stmt->bind_param("i", $blog['id']);
-                $stmt->execute();
-                $comments = $stmt->get_result();
+                $stmt->execute([$blog['id']]);
+                $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 ?>
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                     <img src="<?php echo htmlspecialchars($blog['img']); ?>" alt="Blog Image" class="w-full h-40 object-cover rounded-md mb-4">
@@ -76,12 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['co
                     <p class="text-gray-400 text-sm mb-4">By: <?php echo htmlspecialchars($blog['author']); ?></p>
                     <p class="text-gray-500 text-sm mb-4">Published on: <?php echo htmlspecialchars($blog['date']); ?></p>
 
-
                     <div class="bg-gray-700 p-4 rounded-md mb-4">
                         <h4 class="text-xl font-bold text-white mb-2">Comments</h4>
                         <?php
-                        if ($comments->num_rows > 0) {
-                            while ($comment = $comments->fetch_assoc()) {
+                        if (!empty($comments)) {
+                            foreach ($comments as $comment) {
                                 ?>
                                 <div class="mb-2">
                                     <p class="text-gray-300 text-sm">
@@ -98,7 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['blog_id'], $_POST['co
                         ?>
                         <a href="blog_details.php?id=<?php echo $blog['id']; ?>" class="text-blue-400 hover:underline text-sm">View All Comments</a>
                     </div>
-
 
                     <?php if (isset($_SESSION['user_id'])) { ?>
                         <form method="POST" class="mt-4">
