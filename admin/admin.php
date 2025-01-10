@@ -1,9 +1,6 @@
 <?php
-require '../conexions/connect.php';
+require '../conexions/connect.php'; // Ensure this file provides $conn
 session_start();
-
-$database = new Database();
-$conn = $database->getConnection();
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../conexions/login.php");
@@ -87,6 +84,7 @@ if (isset($_GET['ban_user'])) {
                         <div class="flex space-x-4">
                             <?php if ($row['role'] === 'user') { ?>
                                 <a href="?make_admin=<?php echo $row['id']; ?>"
+
                                    class="bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-4 rounded-md transition duration-300">
                                     Make Admin
                                 </a>

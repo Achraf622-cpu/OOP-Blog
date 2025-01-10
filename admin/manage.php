@@ -1,24 +1,24 @@
 <?php
-require '../conexions/connect.php';
+require '../conexions/connect.php'; // Ensure this file returns a valid PDO connection.
 session_start();
 
-
+// Ensure only admins can access this page
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../conexions/login.php");
     exit;
 }
 
-
+// Handle blog deletion
 if (isset($_GET['delete_blog'])) {
     $blog_id = intval($_GET['delete_blog']);
-    $stmt = $conn->prepare("DELETE FROM articles WHERE id = ?");
-    $stmt->bind_param("i", $blog_id);
+    $stmt = $conn->prepare("DELETE FROM articles WHERE id = :id");
+    $stmt->bindParam(':id', $blog_id, PDO::PARAM_INT);
     $stmt->execute();
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
 
-
+// Filtering and sorting logic
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
 $sort_order = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'recent';
 
@@ -26,11 +26,11 @@ $query = "SELECT a.id, a.titre, a.para, a.img, a.date, u.username AS author
           FROM articles a 
           JOIN users u ON a.id_users = u.id";
 
-
+$params = [];
 if ($filter_date) {
-    $query .= " WHERE DATE(a.date) = ?";
+    $query .= " WHERE DATE(a.date) = :filter_date";
+    $params[':filter_date'] = $filter_date;
 }
-
 
 if ($sort_order === 'oldest') {
     $query .= " ORDER BY a.date ASC";
@@ -39,11 +39,8 @@ if ($sort_order === 'oldest') {
 }
 
 $stmt = $conn->prepare($query);
-if ($filter_date) {
-    $stmt->bind_param("s", $filter_date);
-}
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt->execute($params);
+$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -58,7 +55,7 @@ $result = $stmt->get_result();
 
 <div class="flex min-h-screen">
 
-
+    <!-- Sidebar -->
     <aside class="w-1/4 bg-gray-800 p-6 border-r border-gray-700">
         <h2 class="text-3xl font-extrabold text-blue-400 mb-6">Admin Panel</h2>
         <ul class="space-y-6">
@@ -67,13 +64,12 @@ $result = $stmt->get_result();
         </ul>
     </aside>
 
-
+    <!-- Main Content -->
     <main class="w-3/4 p-8 bg-gray-900">
         <div class="text-center mb-10">
             <h1 class="text-5xl font-extrabold text-blue-400 mb-4">Manage Blogs</h1>
             <p class="text-lg text-gray-300">View, filter, and manage blogs</p>
         </div>
-
 
         <form method="GET" class="mb-8 text-center flex items-center justify-center gap-4">
             <div>
@@ -94,11 +90,10 @@ $result = $stmt->get_result();
             </div>
         </form>
 
-
         <div class="grid grid-cols-3 gap-6">
             <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
+            if ($result) {
+                foreach ($result as $row) {
                     ?>
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <img src="<?php echo htmlspecialchars($row['img']); ?>" alt="Blog Image" class="w-full h-40 object-cover rounded-md mb-4">

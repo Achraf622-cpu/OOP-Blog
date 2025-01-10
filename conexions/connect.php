@@ -1,21 +1,14 @@
 <?php
-class Database {
-    private $host = '127.0.0.1';
-    private $user = 'root';
-    private $pass = 'password';
-    private $database = 'OOP';
-    private $conn;
+$host = '127.0.0.1';
+$user = 'root';
+$pass = 'password';
+$database = 'OOP';
 
-    public function __construct() {
-        $this->conn = new PDO("mysql:host={$this->host};dbname={$this->database}", $this->user, $this->pass);
-    }
-
-    public function getConnection() {
-        return $this->conn;
-    }
+try {
+    $conn = new PDO("mysql:host={$host};dbname={$database}", $user, $pass);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "Connected successfully!";
+} catch (PDOException $e) {
+    echo "Connection failed: " . $e->getMessage();
 }
-
-
-$database = new Database();
-$conn = $database->getConnection();
 ?>
