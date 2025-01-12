@@ -1,7 +1,5 @@
 <?php
 require 'connect.php'; 
-require 'Admin.php'; 
-require 'User.php'; 
 session_start();
 
 class Login {
@@ -12,6 +10,7 @@ class Login {
     }
 
     public function authenticate($email, $password) {
+        // Get user info along with the role
         $stmt = $this->conn->prepare("SELECT u.id, u.password, u.username, r.name FROM users u JOIN roles r ON u.id_role = r.id WHERE u.email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -21,17 +20,16 @@ class Login {
             $_SESSION['role'] = $user['name'];
             $_SESSION['username'] = $user['username'];
 
-            // Instantiate the appropriate object based on the role
+            // Redirect based on the role
             if ($user['name'] === 'admin') {
-                $admin = new Admin($user['id'], $user['username'], $email, $this->conn);
-                $_SESSION['user_obj'] = $admin; // Store admin object in session
+                // For admin, redirect to the admin page
                 header("Location: ../admin/admin.php");
+                exit;
             } else {
-                $normalUser = new User($user['id'], $user['username'], $email, $user['name'], $this->conn);
-                $_SESSION['user_obj'] = $normalUser; // Store user object in session
+                // For normal users, redirect to the profile page
                 header("Location: ../Profile/profile.php");
+                exit;
             }
-            exit;
         } else {
             return "Invalid email or password.";
         }

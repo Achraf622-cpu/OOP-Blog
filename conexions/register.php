@@ -22,8 +22,8 @@ class Register {
         // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Assign the default role (e.g., user)
-        $default_role_id = 2; // Assuming 'user' role has ID = 2 in the roles table
+        // Set the default role to 'user' (role id = 1)
+        $default_role_id = 1;  // '1' is for 'user' role
 
         // Insert user into the database
         $stmt = $this->conn->prepare("INSERT INTO users (username, email, password, id_role) VALUES (?, ?, ?, ?)");

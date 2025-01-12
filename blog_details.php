@@ -14,11 +14,11 @@ $blog_id = intval($_GET['id']);
 $query = "SELECT a.id, a.titre, a.para, a.img, a.date, u.username AS author 
           FROM articles a 
           JOIN users u ON a.id_users = u.id 
-          WHERE a.id = ?";
+          WHERE a.id = :id";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("i", $blog_id);
+$stmt->bindParam(':id', $blog_id, PDO::PARAM_INT);
 $stmt->execute();
-$blog = $stmt->get_result()->fetch_assoc();
+$blog = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$blog) {
     echo "<p class='text-gray-400'>Blog not found.</p>";
@@ -29,12 +29,12 @@ if (!$blog) {
 $query = "SELECT c.text, c.date, u.username 
           FROM coment c 
           JOIN users u ON c.id_user = u.id 
-          WHERE c.id_article = ? 
+          WHERE c.id_article = :id 
           ORDER BY c.date DESC";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("i", $blog_id);
+$stmt->bindParam(':id', $blog_id, PDO::PARAM_INT);
 $stmt->execute();
-$comments = $stmt->get_result();
+$comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle new comments
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
@@ -42,8 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
     $user_id = $_SESSION['user_id'] ?? null;
 
     if ($user_id && !empty($comment_text)) {
-        $stmt = $conn->prepare("INSERT INTO coment (text, id_user, id_article) VALUES (?, ?, ?)");
-        $stmt->bind_param("sii", $comment_text, $user_id, $blog_id);
+        $stmt = $conn->prepare("INSERT INTO coment (text, id_user, id_article) VALUES (:text, :user_id, :article_id)");
+        $stmt->bindParam(':text', $comment_text, PDO::PARAM_STR);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':article_id', $blog_id, PDO::PARAM_INT);
         $stmt->execute();
         header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $blog_id);
         exit;
@@ -89,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
     <div class="max-w-4xl mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold text-blue-400 mb-4">Comments</h2>
         <?php
-        if ($comments->num_rows > 0) {
-            while ($comment = $comments->fetch_assoc()) {
+        if ($comments) {
+            foreach ($comments as $comment) {
                 ?>
                 <div class="mb-4">
                     <p class="text-gray-300 text-sm">

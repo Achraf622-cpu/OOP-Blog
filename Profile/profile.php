@@ -2,7 +2,7 @@
 require '../conexions/connect.php';  // Assuming this is where the PDO connection is created
 session_start();
 
-// Check if the user is logged in
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../conexions/login.php");
     exit;
